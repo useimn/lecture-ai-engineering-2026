@@ -5,10 +5,13 @@ TestModel は実際のLLMを呼ばない偽モデルで、登録されたツー�
 「ツールが登録され、呼ばれ、結果がモデルに戻るか」を確かめられる。
 """
 
+from types import SimpleNamespace
+
 from pydantic_ai.messages import ToolCallPart, ToolReturnPart
 from pydantic_ai.models.test import TestModel
 
 from app.agent import agent
+from app.ask import format_usage_metadata
 
 BASE_TOOLS = {"search_glossary", "get_lecture_summary"}
 
@@ -37,3 +40,11 @@ def test_glossary_result_reaches_the_model():
         result = agent.run_sync("RAGとは？")
     returns = _parts(result, ToolReturnPart)
     assert returns and returns[0].tool_name == "search_glossary"
+
+
+def test_format_usage_metadata_handles_prompt_and_response_tokens():
+    response = SimpleNamespace(
+        usage_metadata=SimpleNamespace(prompt_token_count=123, response_token_count=45)
+    )
+
+    assert format_usage_metadata(response) == "入力トークン数: 123, 出力トークン数: 45"

@@ -21,12 +21,29 @@ from app.config import MODEL, api_error_message, get_api_key
 DEFAULT_QUESTION = "AIE2026の講座の宿題にある「3レベル」とは何ですか？"
 
 
+def format_usage_metadata(response) -> str:
+    """Google GenAI の usage_metadata から入力/出力トークン数を読みやすい文字列で返す。"""
+    metadata = getattr(response, "usage_metadata", None)
+    if metadata is None:
+        return ""
+
+    prompt_tokens = getattr(metadata, "prompt_token_count", None)
+    output_tokens = getattr(metadata, "response_token_count", None)
+    if prompt_tokens is None and output_tokens is None:
+        return ""
+
+    prompt_text = prompt_tokens if prompt_tokens is not None else "N/A"
+    output_text = output_tokens if output_tokens is not None else "N/A"
+    return f"入力トークン数: {prompt_text}, 出力トークン数: {output_text}"
+
+
 def ask(question: str) -> str:
     client = genai.Client(api_key=get_api_key())
     response = client.models.generate_content(model=MODEL, contents=question)
 
-    # TODO(第1回 演習): response.usage_metadata から
-    #   入力トークン数と出力トークン数を表示してみよう（Copilotに頼んでよい）
+    usage = format_usage_metadata(response)
+    if usage:
+        print(f"[usage] {usage}")
 
     return response.text
 
